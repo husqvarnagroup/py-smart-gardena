@@ -17,12 +17,21 @@ from gardena.exceptions.authentication_exception import AuthenticationException
 from gardena.location import Location
 from gardena.token_manager import TokenManager
 
+AUTHENTICATION_API = "https://api.authentication.husqvarnagroup.dev/v1"
+SMART_API = "https://api.smart.gardena.dev/v1"
 MAX_BACKOFF_VALUE = 900
 
 class SmartSystem:
     """Base class to communicate with gardena and handle network calls"""
 
-    def __init__(self, client_id=None, client_secret=None, level=logging.INFO):
+    def __init__(
+        self,
+        client_id=None,
+        client_secret=None,
+        auth_api=AUTHENTICATION_API,
+        smart_api=SMART_API,
+        level=logging.INFO,
+    ):
         """Constructor, create instance of gateway"""
         if client_id is None or client_secret is None:
             raise ValueError(
@@ -35,8 +44,8 @@ class SmartSystem:
         )
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
-        self.AUTHENTICATION_API = "https://api.authentication.husqvarnagroup.dev/v1"
-        self.SMART_API = "https://api.smart.gardena.dev/v1"
+        self.auth_api = auth_api
+        self.smart_api = smart_api
         self.client_id = client_id
         self.client_secret = client_secret
         self.locations = {}
@@ -68,7 +77,7 @@ class SmartSystem:
         Authenticate and get tokens.
         This function needs to be called first.
         """
-        url = self.AUTHENTICATION_API + "/oauth2/token"
+        url = self.auth_api + "/oauth2/token"
         extra = {"client_id": self.client_id}
         self.client = AsyncOAuth2Client(
             self.client_id,
@@ -86,7 +95,7 @@ class SmartSystem:
         if self.client:
             if self.token_manager.access_token:
                 await self.client.delete(
-                    f"{self.AUTHENTICATION_API}/token/{self.token_manager.access_token}",
+                    f"{self.auth_api}/token/{self.token_manager.access_token}",
                     headers={"X-Api-Key": self.client_id},
                 )
 
@@ -98,7 +107,7 @@ class SmartSystem:
         headers = self.create_header(True)
 
         r = await self.client.put(
-            f"{self.SMART_API}/command/{service_id}",
+            f"{self.smart_api}/command/{service_id}",
             headers=headers,
             data=json.dumps(args, ensure_ascii=False),
         )
@@ -144,7 +153,7 @@ class SmartSystem:
 
     async def update_locations(self):
         response_data = await self.__call_smart_system_get(
-            f"{self.SMART_API}/locations"
+            f"{self.smart_api}/locations"
         )
         if response_data is not None:
             if "data" not in response_data or len(response_data["data"]) < 1:
@@ -158,7 +167,7 @@ class SmartSystem:
 
     async def update_devices(self, location):
         response_data = await self.__call_smart_system_get(
-            f"{self.SMART_API}/locations/{location.id}"
+            f"{self.smart_api}/locations/{location.id}"
         )
         if response_data is not None:
             #  TODO : test if key exists
@@ -211,7 +220,7 @@ class SmartSystem:
         }
         self.logger.debug("Trying to get Websocket url")
         r = await self.client.post(
-            f"{self.SMART_API}/websocket",
+            f"{self.smart_api}/websocket",
             headers=self.create_header(True),
             data=json.dumps(args, ensure_ascii=False),
         )
