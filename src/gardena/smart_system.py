@@ -35,8 +35,8 @@ class SmartSystem:
         )
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
-        self.AUTHENTICATION_HOST = "https://api.authentication.husqvarnagroup.dev"
-        self.SMART_HOST = "https://api.smart.gardena.dev"
+        self.AUTHENTICATION_API = "https://api.authentication.husqvarnagroup.dev/v1"
+        self.SMART_API = "https://api.smart.gardena.dev/v1"
         self.client_id = client_id
         self.client_secret = client_secret
         self.locations = {}
@@ -68,7 +68,7 @@ class SmartSystem:
         Authenticate and get tokens.
         This function needs to be called first.
         """
-        url = self.AUTHENTICATION_HOST + "/v1/oauth2/token"
+        url = self.AUTHENTICATION_API + "/oauth2/token"
         extra = {"client_id": self.client_id}
         self.client = AsyncOAuth2Client(
             self.client_id,
@@ -86,7 +86,7 @@ class SmartSystem:
         if self.client:
             if self.token_manager.access_token:
                 await self.client.delete(
-                    f"{self.AUTHENTICATION_HOST}/v1/token/{self.token_manager.access_token}",
+                    f"{self.AUTHENTICATION_API}/token/{self.token_manager.access_token}",
                     headers={"X-Api-Key": self.client_id},
                 )
 
@@ -98,7 +98,7 @@ class SmartSystem:
         headers = self.create_header(True)
 
         r = await self.client.put(
-            f"{self.SMART_HOST}/v1/command/{service_id}",
+            f"{self.SMART_API}/command/{service_id}",
             headers=headers,
             data=json.dumps(args, ensure_ascii=False),
         )
@@ -144,7 +144,7 @@ class SmartSystem:
 
     async def update_locations(self):
         response_data = await self.__call_smart_system_get(
-            f"{self.SMART_HOST}/v1/locations"
+            f"{self.SMART_API}/locations"
         )
         if response_data is not None:
             if "data" not in response_data or len(response_data["data"]) < 1:
@@ -158,7 +158,7 @@ class SmartSystem:
 
     async def update_devices(self, location):
         response_data = await self.__call_smart_system_get(
-            f"{self.SMART_HOST}/v1/locations/{location.id}"
+            f"{self.SMART_API}/locations/{location.id}"
         )
         if response_data is not None:
             #  TODO : test if key exists
@@ -211,7 +211,7 @@ class SmartSystem:
         }
         self.logger.debug("Trying to get Websocket url")
         r = await self.client.post(
-            f"{self.SMART_HOST}/v1/websocket",
+            f"{self.SMART_API}/websocket",
             headers=self.create_header(True),
             data=json.dumps(args, ensure_ascii=False),
         )
