@@ -18,7 +18,7 @@ from gardena.location import Location
 from gardena.token_manager import TokenManager
 
 AUTHENTICATION_API = "https://api.authentication.husqvarnagroup.dev/v1"
-SMART_API = "https://api.smart.gardena.dev/v1"
+SMART_API = "https://api.smart.gardena.dev/v2"
 MAX_BACKOFF_VALUE = 900
 
 class SmartSystem:
